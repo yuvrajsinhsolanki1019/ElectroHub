@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electro Hub | Premium Electronics</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        /* Custom Animations & Scrollbar */
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        .toast-enter { animation: slideIn 0.3s forwards; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-black text-neutral-300 font-sans selection:bg-blue-500/30 min-h-screen flex flex-col">
+
+    <!-- Notification Toast Container -->
+    <div id="toast-container" class="fixed bottom-10 right-10 z-[100] flex flex-col gap-2"></div>
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800 px-4 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleMobileMenu()" class="lg:hidden text-white text-2xl">
+                    <i class="ph ph-list" id="menu-icon"></i>
+                </button>
+                <div onclick="navigate('home')" class="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent cursor-pointer">
+                    ELECTRO HUB
+                </div>
+            </div>
+
+            <!-- Desktop Links -->
+            <div class="hidden lg:flex items-center gap-8 text-neutral-400 font-medium nav-links">
+                <button onclick="navigate('home')" class="hover:text-white transition" data-target="home">Home</button>
+                <button onclick="navigate('shop')" class="hover:text-white transition" data-target="shop">Shop</button>
+                <button onclick="navigate('deals')" class="hover:text-white transition text-blue-400 font-bold" data-target="deals">Deals</button>
+                <button onclick="navigate('track')" class="hover:text-white transition" data-target="track">Track Order</button>
+                <button onclick="navigate('wishlist')" class="hover:text-white transition" data-target="wishlist">Wishlist</button>
+                <button id="nav-admin-btn" onclick="navigate('admin')" class="hidden text-blue-400 hover:text-blue-300 font-bold flex items-center gap-1">
+                    <i class="ph ph-squares-four"></i> Admin
+                </button>
+            </div>
+
+            <!-- Icons -->
+            <div class="flex items-center gap-5">
+                <div class="hidden md:flex relative">
+                    <input type="text" id="desktop-search" placeholder="Search items..." class="bg-neutral-900 border border-neutral-800 rounded-full py-1.5 px-4 pl-10 text-sm focus:outline-none focus:border-blue-500 w-64 text-white" onkeyup="handleSearch(event)">
+                    <i class="ph ph-magnifying-glass absolute left-3 top-2.5 text-neutral-500"></i>
+                </div>
+                <button onclick="navigate('wishlist')" class="relative text-neutral-400 hover:text-white transition text-xl">
+                    <i class="ph ph-heart"></i>
+                    <span id="wishlist-badge" class="hidden absolute -top-1.5 -right-2 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">0</span>
+                </button>
+                <button onclick="navigate('cart')" class="relative text-neutral-400 hover:text-white transition text-xl">
+                    <i class="ph ph-shopping-cart"></i>
+                    <span id="cart-badge" class="hidden absolute -top-1.5 -right-2 bg-blue-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">0</span>
+                </button>
+                <button onclick="handleUserClick()" class="text-neutral-400 hover:text-white transition text-xl">
+                    <i class="ph ph-user"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden lg:hidden absolute top-full left-0 w-full bg-neutral-950 border-b border-neutral-800 p-4 space-y-4 shadow-xl">
+            <div class="mb-4 relative">
+                <input type="text" id="mobile-search" placeholder="Search products..." class="w-full bg-neutral-900 border border-neutral-800 rounded-lg py-3 px-4 pl-10 text-sm focus:outline-none focus:border-blue-500 text-white" onkeyup="handleSearch(event, true)">
+                <i class="ph ph-magnifying-glass absolute left-3 top-3.5 text-neutral-500 text-lg"></i>
+            </div>
+            <button onclick="navigate('home'); toggleMobileMenu();" class="block w-full text-left text-neutral-300 py-2 border-b border-neutral-900">Home</button>
+            <button onclick="navigate('shop'); toggleMobileMenu();" class="block w-full text-left text-neutral-300 py-2 border-b border-neutral-900">Shop Products</button>
+            <button onclick="navigate('deals'); toggleMobileMenu();" class="block w-full text-left text-blue-400 font-bold py-2 border-b border-neutral-900">Deals & Offers</button>
+            <button onclick="navigate('track'); toggleMobileMenu();" class="block w-full text-left text-neutral-300 py-2 border-b border-neutral-900">Track Order</button>
+            <button onclick="navigate('wishlist'); toggleMobileMenu();" class="block w-full text-left text-neutral-300 py-2 border-b border-neutral-900">Wishlist</button>
+            <button id="mobile-admin-btn" onclick="navigate('admin'); toggleMobileMenu();" class="hidden block w-full text-left text-blue-400 py-2 border-b border-neutral-900">Admin Dashboard</button>
+            <button id="mobile-logout-btn" onclick="logout(); toggleMobileMenu();" class="hidden block w-full text-left text-red-400 py-2">Logout</button>
+            <button id="mobile-login-btn" onclick="navigate('login'); toggleMobileMenu();" class="block w-full text-left text-neutral-300 py-2">Login to Account</button>
+        </div>
+    </nav>
+
+    <!-- Main Content Areas -->
+    <main class="flex-grow min-h-[80vh]">
+        <!-- LOGIN PAGE -->
+        <div id="page-login" class="page max-w-md mx-auto my-12 px-4">
+            <div class="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl shadow-2xl">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-black text-white mb-2" id="login-title">Welcome Back</h1>
+                    <p class="text-neutral-500 text-sm" id="login-sub">Enter your credentials to access your account</p>
+                </div>
+                <form id="login-form" class="space-y-5" onsubmit="handleLogin(event)">
+                    <div id="signup-fields" class="hidden">
+                        <label class="block text-neutral-400 text-xs font-bold uppercase mb-2">Full Name</label>
+                        <input type="text" class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition focus:outline-none" placeholder="John Doe">
+                    </div>
+                    <div>
+                        <label class="block text-neutral-400 text-xs font-bold uppercase mb-2">Email Address</label>
+                        <input type="email" required class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition focus:outline-none" placeholder="name@company.com">
+                    </div>
+                    <div>
+                        <label class="block text-neutral-400 text-xs font-bold uppercase mb-2">Password</label>
+                        <input type="password" required class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white focus:border-blue-500 transition focus:outline-none" placeholder="••••••••">
+                    </div>
+                    <div class="text-right" id="forgot-pw">
+                        <button type="button" class="text-xs text-blue-500 hover:underline">Forgot Password?</button>
+                    </div>
+                    <button type="submit" id="login-submit-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold transition shadow-xl shadow-blue-500/10">Sign In</button>
+                </form>
+                <div class="mt-8 text-center text-sm">
+                    <span class="text-neutral-500" id="login-toggle-text">Don't have an account?</span>
+                    <button onclick="toggleSignup()" class="ml-2 text-blue-500 font-bold hover:underline" id="login-toggle-btn">Sign up for free</button>
+                </div>
+                <div class="mt-6 pt-6 border-t border-neutral-800 space-y-3">
+                    <button onclick="continueAsGuest()" class="w-full bg-neutral-800 hover:bg-neutral-700 text-white py-3 rounded-2xl font-bold transition text-sm">Continue as Guest</button>
+                    <button onclick="loginAsAdmin()" class="w-full bg-transparent border border-neutral-700 hover:border-neutral-500 text-white py-3 rounded-2xl font-bold transition text-sm">Login as Demo Admin</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOME PAGE -->
+        <div id="page-home" class="page space-y-12 pb-20">
+            <section class="relative h-[60vh] flex items-center overflow-hidden rounded-3xl mx-4 mt-6">
+                <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=1600&q=80" onerror="handleImageError(this, 'Store Banner')" alt="Banner" class="absolute inset-0 w-full h-full object-cover brightness-50">
+                <div class="relative z-10 px-8 md:px-16 max-w-2xl">
+                    <h1 class="text-5xl md:text-7xl font-black text-white mb-6 leading-tight">
+                        FUTURE OF <span class="text-blue-500 underline decoration-blue-500/30">ELECTRONICS</span>
+                    </h1>
+                    <p class="text-neutral-300 text-lg mb-8 max-w-md">Discover the latest gadgets and cutting-edge tech. Premium quality, best prices, delivered to your door.</p>
+                    <button onclick="navigate('shop')" class="bg-white text-black px-8 py-4 rounded-full font-bold hover:bg-blue-500 hover:text-white transition-all flex items-center gap-2 group">
+                        Shop Collection <i class="ph ph-caret-right group-hover:translate-x-1 transition text-xl"></i>
+                    </button>
+                </div>
+            </section>
+
+            <section class="px-4 max-w-7xl mx-auto">
+                <div class="flex items-center justify-between mb-8">
+                    <h2 class="text-3xl font-bold text-white">Top Categories</h2>
+                    <button onclick="navigate('shop')" class="text-blue-500 hover:underline font-medium">View All</button>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4" id="home-categories"></div>
+            </section>
+
+            <section class="px-4 max-w-7xl mx-auto">
+                <div class="flex justify-between items-end mb-8">
+                    <h2 class="text-3xl font-bold text-white">Featured Items</h2>
+                    <button onclick="navigate('deals')" class="text-blue-500 hover:underline font-bold text-sm">View Deals</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="home-featured-products"></div>
+            </section>
+
+            <section class="mx-4 bg-blue-600 rounded-3xl p-12 text-center text-white">
+                <h2 class="text-3xl font-black mb-4">Join the Hub</h2>
+                <p class="text-blue-100 mb-8 max-w-lg mx-auto">Subscribe to get special offers, free giveaways, and once-in-a-lifetime deals.</p>
+                <div class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                    <input type="email" placeholder="Enter your email" class="bg-white/20 border border-white/30 rounded-full px-6 py-3 flex-grow focus:outline-none placeholder:text-blue-200">
+                    <button onclick="notify('Subscribed successfully!')" class="bg-black text-white px-8 py-3 rounded-full font-bold hover:bg-neutral-900 transition">Subscribe</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- SHOP PAGE -->
+        <div id="page-shop" class="page max-w-7xl mx-auto px-4 py-10">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Mobile Filter Toggle -->
+                <div class="lg:hidden w-full">
+                    <button onclick="toggleFilters()" class="w-full bg-neutral-900 border border-neutral-800 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2">
+                        <i class="ph ph-faders"></i> <span id="filter-btn-text">Filter Categories</span>
+                    </button>
+                </div>
+
+                <!-- Sidebar Filters -->
+                <aside id="shop-sidebar" class="hidden lg:block w-full lg:w-64 space-y-8 shrink-0">
+                    <div>
+                        <h3 class="text-white font-bold mb-4 flex items-center gap-2"><i class="ph ph-faders hidden lg:block"></i> Categories</h3>
+                        <div class="space-y-2" id="shop-categories-list"></div>
+                    </div>
+                    <div class="bg-neutral-900 p-6 rounded-2xl border border-neutral-800 cursor-pointer hover:border-blue-500 transition" onclick="navigate('deals')">
+                        <h4 class="text-white font-bold mb-2 flex items-center gap-2"><i class="ph-fill ph-tag text-blue-500"></i> Deals Hub</h4>
+                        <p class="text-neutral-400 text-sm mb-4">Check out our currently active discounts!</p>
+                        <span class="text-blue-500 font-bold text-sm underline">View Deals</span>
+                    </div>
+                </aside>
+
+                <!-- Product Grid -->
+                <main class="flex-grow">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+                        <h1 class="text-3xl font-bold text-white flex items-center gap-3">
+                            <span id="shop-title">All Products</span>
+                            <span class="text-sm font-normal text-neutral-500" id="shop-count">(0 items)</span>
+                        </h1>
+                        <select id="shop-sort" onchange="renderShop()" class="bg-neutral-900 border border-neutral-800 text-neutral-400 text-sm rounded-lg px-3 py-2 focus:outline-none">
+                            <option value="newest">Newest First</option>
+                            <option value="low">Price: Low to High</option>
+                            <option value="high">Price: High to Low</option>
+                        </select>
+                    </div>
+                    <div id="shop-grid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+                    <div id="shop-empty" class="hidden py-20 text-center">
+                        <div class="text-neutral-600 mb-4 flex justify-center"><i class="ph ph-magnifying-glass text-6xl"></i></div>
+                        <h3 class="text-white text-xl font-bold">No products found</h3>
+                        <p class="text-neutral-500">Try adjusting your filters or search query.</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+
+        <!-- DEALS PAGE -->
+        <div id="page-deals" class="page max-w-7xl mx-auto px-4 py-12">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-black text-white mb-4 flex justify-center items-center gap-3">
+                    <i class="ph-fill ph-fire text-orange-500"></i> Hot Deals
+                </h1>
+                <p class="text-neutral-400">Massive discounts on premium tech. Limited time only!</p>
+            </div>
+            <div id="deals-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        </div>
+
+        <!-- PRODUCT DETAILS PAGE -->
+        <div id="page-product" class="page max-w-7xl mx-auto px-4 py-12">
+            <button onclick="navigate('shop')" class="flex items-center gap-2 text-neutral-400 hover:text-white mb-8 transition">
+                <i class="ph ph-arrow-left"></i> Back to Shop
+            </button>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12" id="product-details-container">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+
+        <!-- CART PAGE -->
+        <div id="page-cart" class="page max-w-7xl mx-auto px-4 py-12">
+            <h1 class="text-4xl font-black text-white mb-10">Your Bag</h1>
+            <div id="cart-content"></div>
+        </div>
+
+        <!-- WISHLIST PAGE -->
+        <div id="page-wishlist" class="page max-w-7xl mx-auto px-4 py-12">
+            <h1 class="text-4xl font-black text-white mb-10">Your Wishlist</h1>
+            <div id="wishlist-content" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        </div>
+
+        <!-- CHECKOUT PAGE -->
+        <div id="page-checkout" class="page max-w-4xl mx-auto px-4 py-12">
+            <h1 class="text-4xl font-black text-white mb-10 text-center">Checkout</h1>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="space-y-8">
+                    <!-- Shipping -->
+                    <div class="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl">
+                        <h2 class="text-xl font-bold text-white mb-6">Shipping Info</h2>
+                        <div class="space-y-4">
+                            <input type="text" placeholder="Full Name" class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                            <input type="text" placeholder="Address" class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                            <div class="grid grid-cols-2 gap-4">
+                                <input type="text" placeholder="City" class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                                <input type="text" placeholder="PIN Code" class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Payment -->
+                    <div class="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl">
+                        <h2 class="text-xl font-bold text-white mb-6">Payment Method</h2>
+                        <div class="grid grid-cols-2 gap-4 mb-6">
+                            <button onclick="setPayment('upi')" id="pay-upi" class="pay-btn border border-blue-600 bg-blue-600/10 p-4 rounded-2xl flex flex-col items-center gap-2 transition">
+                                <div class="text-blue-400 font-black italic">UPI</div><span class="text-white font-bold text-xs">GPay, PhonePe</span>
+                            </button>
+                            <button onclick="setPayment('card')" id="pay-card" class="pay-btn border border-neutral-800 p-4 rounded-2xl flex flex-col items-center gap-2 transition hover:border-neutral-700">
+                                <i class="ph ph-credit-card text-neutral-500 text-xl" id="pay-card-icon"></i><span class="text-white font-bold text-xs">Credit / Debit</span>
+                            </button>
+                            <button onclick="setPayment('netbanking')" id="pay-netbanking" class="pay-btn border border-neutral-800 p-4 rounded-2xl flex flex-col items-center gap-2 transition hover:border-neutral-700">
+                                <span class="text-neutral-500 font-black text-xl" id="pay-net-icon">🏦</span><span class="text-white font-bold text-xs">Netbanking</span>
+                            </button>
+                            <button onclick="setPayment('cod')" id="pay-cod" class="pay-btn border border-neutral-800 p-4 rounded-2xl flex flex-col items-center gap-2 transition hover:border-neutral-700">
+                                <span class="text-neutral-500 font-black text-xl" id="pay-cod-icon">💵</span><span class="text-white font-bold text-xs">Cash on Delivery</span>
+                            </button>
+                        </div>
+                        <div id="payment-fields"></div>
+                    </div>
+                </div>
+                <!-- Summary -->
+                <div class="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl h-fit">
+                    <h2 class="text-xl font-bold text-white mb-6">Order Total</h2>
+                    <div id="checkout-items" class="space-y-4 mb-8 text-sm"></div>
+                    <div class="pt-4 border-t border-neutral-800 space-y-4">
+                        <div class="flex justify-between text-2xl font-black text-white">
+                            <span>Total</span><span id="checkout-total">₹0</span>
+                        </div>
+                        <button onclick="placeOrder()" class="w-full bg-green-600 hover:bg-green-500 text-white py-4 rounded-2xl font-bold transition shadow-xl shadow-green-500/10">Confirm Order</button>
+                        <p id="cod-msg" class="hidden text-center text-yellow-500 text-xs mt-2 font-bold">Pay via Cash or UPI on delivery.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ORDERS PAGE -->
+        <div id="page-orders" class="page max-w-4xl mx-auto px-4 py-12">
+            <h1 class="text-4xl font-black text-white mb-10">Your Orders</h1>
+            <div id="orders-content" class="space-y-4"></div>
+        </div>
+
+        <!-- TRACK ORDER PAGE -->
+        <div id="page-track" class="page max-w-3xl mx-auto px-4 py-20">
+            <div class="text-center mb-10">
+                <div class="flex justify-center mb-6 text-blue-500"><i class="ph ph-truck text-5xl"></i></div>
+                <h1 class="text-4xl font-black text-white mb-4">Track Your Order</h1>
+                <p class="text-neutral-500">Enter the order ID provided during checkout to see real-time updates.</p>
+            </div>
+            <form onsubmit="handleTrack(event)" class="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto mb-12">
+                <input type="text" id="track-input" placeholder="Order ID (e.g. 1712000...)" required class="flex-grow bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-xl font-bold transition">Track</button>
+            </form>
+            <div id="track-result"></div>
+        </div>
+
+        <!-- ADMIN PANEL -->
+        <div id="page-admin" class="page max-w-7xl mx-auto px-4 py-12">
+            <div class="flex items-center justify-between mb-10">
+                <div>
+                    <h1 class="text-4xl font-black text-white">Dashboard</h1>
+                    <p class="text-neutral-500">Manage your store inventory and sales</p>
+                </div>
+                <button onclick="navigate('shop')" class="bg-neutral-900 border border-neutral-800 px-4 py-2 rounded-xl text-neutral-300 hover:text-white">View Store</button>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-8">
+                <nav class="w-full lg:w-64 space-y-2">
+                    <button onclick="setAdminTab('products')" id="tab-products" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold bg-blue-600 text-white"><i class="ph ph-package text-xl"></i> Products</button>
+                    <button onclick="setAdminTab('orders')" id="tab-orders" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold text-neutral-500 hover:bg-neutral-900"><i class="ph ph-shopping-cart text-xl"></i> Orders</button>
+                    <button onclick="logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold text-red-500 hover:bg-red-500/10"><i class="ph ph-sign-out text-xl"></i> Sign Out</button>
+                </nav>
+                <div class="flex-grow bg-neutral-900 border border-neutral-800 rounded-3xl p-6 overflow-hidden">
+                    <div id="admin-products-view" class="space-y-6">
+                        <div class="flex justify-between items-center">
+                            <h2 class="text-2xl font-bold text-white">Inventory</h2>
+                            <button class="bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-500 flex items-center gap-2"><i class="ph ph-plus"></i> New Product</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="border-b border-neutral-800 text-neutral-500 text-xs uppercase tracking-wider">
+                                    <tr><th class="pb-4 font-bold">Product</th><th class="pb-4 font-bold">Category</th><th class="pb-4 font-bold">Price</th><th class="pb-4 font-bold">Action</th></tr>
+                                </thead>
+                                <tbody id="admin-table-body" class="text-sm divide-y divide-neutral-800"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div id="admin-orders-view" class="hidden text-center py-20 text-neutral-600">
+                        <i class="ph ph-bag text-5xl mb-4 opacity-20 block"></i>
+                        <p>No customer orders visible in demo mode.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DYNAMIC POLICY PAGE -->
+        <div id="page-policy" class="page max-w-4xl mx-auto px-4 py-16">
+            <div class="bg-neutral-900 border border-neutral-800 p-10 rounded-3xl">
+                <h1 id="policy-title" class="text-4xl font-black text-white mb-6 border-b border-neutral-800 pb-6">Policy Title</h1>
+                <div id="policy-content" class="text-neutral-400 leading-relaxed space-y-4 text-lg">
+                    <!-- Injected via JS -->
+                </div>
+                <button onclick="navigate('home')" class="mt-10 bg-neutral-800 hover:bg-neutral-700 text-white px-6 py-3 rounded-xl font-bold transition">Return Home</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-neutral-950 border-t border-neutral-900 pt-20 pb-10 px-4">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+            <div class="space-y-6">
+                <div class="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent">ELECTRO HUB</div>
+                <p class="text-neutral-500 leading-relaxed">Your premium destination for high-end electronics. We bring the future of technology to your doorstep.</p>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6">Quick Links</h4>
+                <ul class="space-y-4 text-neutral-500 text-sm">
+                    <li onclick="setSelectedCategory('All'); navigate('shop');" class="hover:text-blue-500 cursor-pointer transition">Shop All</li>
+                    <li onclick="navigate('shop')" class="hover:text-blue-500 cursor-pointer transition">New Arrivals</li>
+                    <li onclick="navigate('track')" class="hover:text-blue-500 cursor-pointer transition">Track Order</li>
+                    <li onclick="navigate('deals')" class="hover:text-blue-500 cursor-pointer transition">Deals & Offers</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6">Support</h4>
+                <ul class="space-y-4 text-neutral-500 text-sm">
+                    <li onclick="openPolicy('Help Center')" class="hover:text-blue-500 cursor-pointer transition">Help Center</li>
+                    <li onclick="openPolicy('Shipping Policy')" class="hover:text-blue-500 cursor-pointer transition">Shipping Policy</li>
+                    <li onclick="openPolicy('Returns & Refunds')" class="hover:text-blue-500 cursor-pointer transition">Returns & Refunds</li>
+                    <li onclick="openPolicy('Contact Us')" class="hover:text-blue-500 cursor-pointer transition">Contact Us</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-bold mb-6">Newsletter</h4>
+                <p class="text-neutral-500 text-sm mb-4">Stay updated with our latest news and offers.</p>
+                <div class="relative">
+                    <input type="email" placeholder="Email Address" class="w-full bg-neutral-900 border border-neutral-800 rounded-full px-4 py-2 text-sm text-white focus:outline-none">
+                    <button onclick="notify('Subscribed to Newsletter!')" class="absolute right-1 top-1 bg-blue-600 p-1.5 rounded-full text-white hover:bg-blue-500 transition"><i class="ph ph-caret-right"></i></button>
+                </div>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto pt-8 border-t border-neutral-900 flex flex-col md:flex-row justify-between items-center gap-4 text-neutral-600 text-xs">
+            <p>© 2024 Electro Hub. All rights reserved.</p>
+            <div class="flex gap-6">
+                <span onclick="openPolicy('Privacy Policy')" class="cursor-pointer hover:text-white transition">Privacy Policy</span>
+                <span onclick="openPolicy('Terms of Service')" class="cursor-pointer hover:text-white transition">Terms of Service</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // --- DATA ---
+        const PRODUCTS = [
+            { id: 1, name: "iPhone 15 Pro", category: "Phones", price: 134900, rating: 4.8, reviews: 124, image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=800&q=80", description: "The ultimate iPhone with Titanium design and A17 Pro chip." },
+            { id: 6, name: "Samsung S24 Ultra", category: "Phones", price: 129999, rating: 4.8, reviews: 112, image: "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=800&q=80", description: "The most powerful Galaxy yet, with integrated S Pen." },
+            { id: 9, name: "Google Pixel 8 Pro", category: "Phones", price: 106999, rating: 4.7, reviews: 85, image: "https://images.unsplash.com/photo-1585060544812-6b45742d762f?auto=format&fit=crop&w=800&q=80", description: "Advanced AI features with the best smartphone camera." },
+            { id: 10, name: "OnePlus 12", category: "Phones", price: 64999, rating: 4.6, reviews: 92, image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80", description: "Smooth beyond belief with Hasselblad camera system." },
+            { id: 11, name: "Nothing Phone (2)", category: "Phones", price: 44999, rating: 4.5, reviews: 64, image: "https://images.unsplash.com/photo-1605236453806-6ff36851218e?auto=format&fit=crop&w=800&q=80", description: "Unique transparent design with Glyph Interface." },
+            { id: 2, name: "MacBook Air M3", category: "Laptops", price: 114900, rating: 4.9, reviews: 89, image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80", description: "Supercharged by M3, the world's most popular laptop is better than ever." },
+            { id: 7, name: "Dell XPS 15", category: "Laptops", price: 149990, rating: 4.4, reviews: 54, image: "https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=800&q=80", description: "Stunning OLED display with incredible performance." },
+            { id: 13, name: "Lenovo ThinkPad X1", category: "Laptops", price: 135000, rating: 4.8, reviews: 78, image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=800&q=80", description: "Premium business laptop with legendary keyboard." },
+            { id: 14, name: "ASUS ROG Zephyrus", category: "Laptops", price: 165990, rating: 4.7, reviews: 110, image: "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&w=800&q=80", description: "High-performance gaming in an ultra-slim chassis." },
+            { id: 3, name: "Sony WH-1000XM5", category: "Headphones", price: 29990, rating: 4.7, reviews: 256, image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?auto=format&fit=crop&w=800&q=80", description: "Industry-leading noise canceling with exceptional sound quality." },
+            { id: 8, name: "AirPods Pro 2", category: "Headphones", price: 24900, rating: 4.9, reviews: 512, image: "https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?auto=format&fit=crop&w=800&q=80", description: "Magic like you've never heard with Active Noise Cancellation." },
+            { id: 17, name: "Bose QuietComfort Ultra", category: "Headphones", price: 35900, rating: 4.8, reviews: 128, image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=800&q=80", description: "World-class noise cancellation and spatial audio." },
+            { id: 4, name: "Apple Watch Ultra 2", category: "Smartwatches", price: 89900, rating: 4.6, reviews: 67, image: "https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=800&q=80", description: "The most rugged and capable Apple Watch ever." },
+            { id: 21, name: "Samsung Galaxy Watch 6", category: "Smartwatches", price: 29999, rating: 4.5, reviews: 145, image: "https://images.unsplash.com/photo-1579586337278-3befd40fd17a?auto=format&fit=crop&w=800&q=80", description: "Track your health and sleep with precision." },
+            { id: 22, name: "Garmin Fenix 7", category: "Smartwatches", price: 65990, rating: 4.8, reviews: 92, image: "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?auto=format&fit=crop&w=800&q=80", description: "Ultimate multisport GPS watch with solar charging." },
+            { id: 5, name: "Sonos Era 300", category: "Speakers", price: 44999, rating: 4.5, reviews: 42, image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=800&q=80", description: "With next-level audio that hits from every direction." },
+            { id: 25, name: "JBL Charge 5", category: "Speakers", price: 14999, rating: 4.7, reviews: 320, image: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&q=80", description: "Bold JBL Original Pro Sound with waterproof design." },
+            { id: 26, name: "Marshall Stanmore III", category: "Speakers", price: 34999, rating: 4.8, reviews: 88, image: "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=800&q=80", description: "Legendary rock 'n' roll design with expansive sound." }
+        ];
+
+        const CATEGORIES = ["All", "Phones", "Laptops", "Headphones", "Smartwatches", "Speakers"];
+        
+        // --- STATE ---
+        let currentPage = 'login';
+        let cart = JSON.parse(localStorage.getItem('electro-hub-cart')) || [];
+        let wishlist = JSON.parse(localStorage.getItem('electro-hub-wishlist')) || [];
+        let orders = JSON.parse(localStorage.getItem('electro-hub-orders')) || [];
+        let user = JSON.parse(localStorage.getItem('electro-hub-user')) || null;
+        let selectedCategory = 'All';
+        let searchQuery = '';
+        let selectedProduct = null;
+        let currentPaymentMethod = 'upi';
+        let isSignupMode = false;
+
+        // Save State
+        function saveState() {
+            localStorage.setItem('electro-hub-cart', JSON.stringify(cart));
+            localStorage.setItem('electro-hub-wishlist', JSON.stringify(wishlist));
+            localStorage.setItem('electro-hub-orders', JSON.stringify(orders));
+            localStorage.setItem('electro-hub-user', JSON.stringify(user));
+            updateBadges();
+        }
+
+        // --- CORE NAVIGATION ---
+        function navigate(page) {
+            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+            document.getElementById(`page-${page}`).classList.add('active');
+            currentPage = page;
+            window.scrollTo(0, 0);
+            
+            document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('text-white'));
+            const activeBtn = document.querySelector(`.nav-links button[data-target="${page}"]`);
+            if(activeBtn && page !== 'deals') activeBtn.classList.add('text-white');
+
+            // Render specific page content
+            if (page === 'home') renderHome();
+            if (page === 'shop') renderShop();
+            if (page === 'deals') renderDeals();
+            if (page === 'cart') renderCart();
+            if (page === 'wishlist') renderWishlist();
+            if (page === 'product') renderProductDetails();
+            if (page === 'checkout') renderCheckout();
+            if (page === 'orders') renderOrders();
+            if (page === 'admin') renderAdmin();
+
+            updateBadges();
+        }
+
+        // --- UTILS ---
+        function notify(msg) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-blue-600 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 toast-enter';
+            toast.innerHTML = `<i class="ph-fill ph-check-circle text-xl"></i><span class="font-bold">${msg}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        // Robust Image Error Handler (GUARANTEES NO BROKEN IMAGES)
+        window.handleImageError = function(img, name) {
+            // Replaces broken image with a clean generated placeholder
+            img.onerror = null; // prevent infinite loop
+            img.src = `https://placehold.co/800x800/111111/3b82f6?text=${encodeURIComponent(name || 'Product')}`;
+        };
+
+        function formatPrice(price) {
+            return '₹' + price.toLocaleString('en-IN');
+        }
+
+        function updateBadges() {
+            const cBadge = document.getElementById('cart-badge');
+            const wBadge = document.getElementById('wishlist-badge');
+            cBadge.innerText = cart.length;
+            wBadge.innerText = wishlist.length;
+            cBadge.classList.toggle('hidden', cart.length === 0);
+            wBadge.classList.toggle('hidden', wishlist.length === 0);
+
+            // Update Auth UI
+            document.getElementById('nav-admin-btn').classList.toggle('hidden', !user?.isAdmin);
+            document.getElementById('mobile-admin-btn').classList.toggle('hidden', !user?.isAdmin);
+            document.getElementById('mobile-logout-btn').classList.toggle('hidden', !user);
+            document.getElementById('mobile-login-btn').classList.toggle('hidden', !!user);
+        }
+
+        // --- ACTION HANDLERS ---
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const icon = document.getElementById('menu-icon');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                icon.classList.replace('ph-list', 'ph-x');
+            } else {
+                menu.classList.add('hidden');
+                icon.classList.replace('ph-x', 'ph-list');
+            }
+        }
+
+        function handleUserClick() {
+            if (user) navigate('orders');
+            else navigate('login');
+        }
+
+        function handleSearch(e, isMobile = false) {
+            searchQuery = e.target.value;
+            if(isMobile) document.getElementById('desktop-search').value = searchQuery;
+            else document.getElementById('mobile-search').value = searchQuery;
+            
+            if (currentPage !== 'shop') navigate('shop');
+            else renderShop();
+        }
+
+        function toggleFilters() {
+            const sidebar = document.getElementById('shop-sidebar');
+            const text = document.getElementById('filter-btn-text');
+            if(sidebar.classList.contains('hidden')) {
+                sidebar.classList.remove('hidden');
+                sidebar.classList.add('animate-in', 'slide-in-from-top-4');
+                text.innerText = "Hide Categories";
+            } else {
+                sidebar.classList.add('hidden');
+                text.innerText = "Filter Categories";
+            }
+        }
+
+        // --- PRODUCT ACTIONS ---
+        function addToCart(id) {
+            const product = PRODUCTS.find(p => p.id === id);
+            const existing = cart.find(i => i.id === id);
+            if (existing) existing.quantity += 1;
+            else cart.push({ ...product, quantity: 1 });
+            saveState();
+            notify(`Added ${product.name} to cart!`);
+        }
+
+        function toggleWishlist(id) {
+            const idx = wishlist.findIndex(i => i.id === id);
+            if (idx > -1) {
+                wishlist.splice(idx, 1);
+            } else {
+                wishlist.push(PRODUCTS.find(p => p.id === id));
+                notify(`Added to wishlist!`);
+            }
+            saveState();
+            
+            // Re-render current page to update heart icon immediately
+            if (currentPage === 'shop') renderShop();
+            else if (currentPage === 'home') renderHome();
+            else if (currentPage === 'wishlist') renderWishlist();
+            else if (currentPage === 'deals') renderDeals();
+            else if (currentPage === 'product') renderProductDetails();
+        }
+
+        function viewProduct(id) {
+            selectedProduct = PRODUCTS.find(p => p.id === id);
+            navigate('product');
+        }
+
+        // --- RENDER HTML TEMPLATES ---
+        function getProductCardHTML(p, isDeal = false) {
+            const inWish = wishlist.find(w => w.id === p.id);
+            const heartClass = inWish ? 'ph-fill ph-heart text-red-500' : 'ph ph-heart';
+            
+            let priceHTML = `<span class="text-xl font-black text-white">${formatPrice(p.price)}</span>`;
+            let badgeHTML = '';
+
+            // If rendering in Deals page, fake a discount
+            if (isDeal) {
+                const discount = Math.floor(Math.random() * 20) + 15; // 15% to 35% off
+                const oldPrice = Math.floor(p.price * (1 + (discount/100)));
+                priceHTML = `
+                    <div class="flex flex-col">
+                        <span class="text-xs text-neutral-500 line-through">${formatPrice(oldPrice)}</span>
+                        <span class="text-xl font-black text-green-400">${formatPrice(p.price)}</span>
+                    </div>
+                `;
+                badgeHTML = `<div class="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-lg z-10">-${discount}% OFF</div>`;
+            }
+
+            return `
+            <div class="group bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden hover:border-blue-500/50 transition-all duration-300 flex flex-col cursor-pointer" onclick="viewProduct(${p.id})">
+                <div class="relative aspect-square overflow-hidden bg-neutral-800">
+                    ${badgeHTML}
+                    <img src="${p.image}" onerror="handleImageError(this, '${p.name}')" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    <button onclick="event.stopPropagation(); toggleWishlist(${p.id})" class="absolute top-3 right-3 p-2 bg-black/40 backdrop-blur-md rounded-full text-white hover:text-red-500 transition z-10">
+                        <i class="${heartClass} text-lg"></i>
+                    </button>
+                </div>
+                <div class="p-4 flex-grow flex flex-col">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-xs text-neutral-500 font-semibold uppercase tracking-wider">${p.category}</span>
+                        <div class="flex items-center gap-1 text-yellow-500 text-xs">
+                            <i class="ph-fill ph-star"></i> <span>${p.rating}</span>
+                        </div>
+                    </div>
+                    <h3 class="text-white font-bold text-lg mb-2 group-hover:text-blue-400 transition line-clamp-1">${p.name}</h3>
+                    <div class="flex items-center justify-between mt-auto">
+                        ${priceHTML}
+                        <button onclick="event.stopPropagation(); addToCart(${p.id})" class="bg-blue-600 hover:bg-blue-500 text-white p-2 rounded-xl transition-all active:scale-95">
+                            <i class="ph ph-plus text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // --- VIEW RENDERERS ---
+        function renderHome() {
+            document.getElementById('home-categories').innerHTML = CATEGORIES.slice(1).map(cat => `
+                <button onclick="setSelectedCategory('${cat}'); navigate('shop');" class="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl text-center hover:border-blue-500/50 hover:bg-neutral-800 transition group">
+                    <div class="text-white font-bold group-hover:text-blue-400">${cat}</div>
+                    <div class="text-neutral-500 text-xs mt-1">Explore</div>
+                </button>
+            `).join('');
+            document.getElementById('home-featured-products').innerHTML = PRODUCTS.slice(0,4).map(p => getProductCardHTML(p)).join('');
+        }
+
+        function setSelectedCategory(cat) {
+            selectedCategory = cat;
+            renderShop();
+            // hide mobile filters if open
+            const sidebar = document.getElementById('shop-sidebar');
+            if(window.innerWidth < 1024 && !sidebar.classList.contains('hidden')) {
+                toggleFilters();
+            }
+        }
+
+        function renderShop() {
+            document.getElementById('shop-categories-list').innerHTML = CATEGORIES.map(cat => `
+                <button onclick="setSelectedCategory('${cat}')" class="block w-full text-left px-3 py-2 rounded-lg transition ${selectedCategory === cat ? 'bg-blue-600 text-white' : 'text-neutral-400 hover:bg-neutral-900'}">${cat}</button>
+            `).join('');
+
+            const sortVal = document.getElementById('shop-sort').value;
+            
+            let filtered = PRODUCTS.filter(p => {
+                const matchQ = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchC = selectedCategory === 'All' || p.category === selectedCategory;
+                return matchQ && matchC;
+            });
+
+            if(sortVal === 'low') filtered.sort((a,b) => a.price - b.price);
+            if(sortVal === 'high') filtered.sort((a,b) => b.price - a.price);
+
+            document.getElementById('shop-title').innerText = selectedCategory === 'All' ? 'All Products' : selectedCategory;
+            document.getElementById('shop-count').innerText = `(${filtered.length} items)`;
+
+            const grid = document.getElementById('shop-grid');
+            const empty = document.getElementById('shop-empty');
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
+            } else {
+                empty.classList.add('hidden');
+                grid.innerHTML = filtered.map(p => getProductCardHTML(p)).join('');
+            }
+        }
+
+        function renderDeals() {
+            // Select some expensive items to show as "Deals"
+            const dealItems = PRODUCTS.filter(p => p.price > 40000).slice(0, 8);
+            document.getElementById('deals-grid').innerHTML = dealItems.map(p => getProductCardHTML(p, true)).join('');
+        }
+
+        function renderProductDetails() {
+            const p = selectedProduct;
+            if(!p) return;
+            const inWish = wishlist.find(w => w.id === p.id);
+
+            document.getElementById('product-details-container').innerHTML = `
+                <div class="space-y-4">
+                    <div class="aspect-square bg-neutral-900 rounded-3xl overflow-hidden border border-neutral-800">
+                        <img src="${p.image}" onerror="handleImageError(this, '${p.name}')" class="w-full h-full object-cover" />
+                    </div>
+                    <div class="grid grid-cols-4 gap-4">
+                        ${[1,2,3,4].map(() => `<div class="aspect-square bg-neutral-900 rounded-xl overflow-hidden border border-neutral-800 opacity-50 hover:opacity-100 transition"><img src="${p.image}" onerror="handleImageError(this, '${p.name}')" class="w-full h-full object-cover"/></div>`).join('')}
+                    </div>
+                </div>
+                <div class="space-y-8">
+                    <div>
+                        <div class="flex items-center gap-2 text-blue-500 font-bold text-sm mb-2 uppercase tracking-widest">
+                            <span>${p.category}</span><span class="w-1 h-1 bg-neutral-700 rounded-full"></span><span>In Stock</span>
+                        </div>
+                        <h1 class="text-4xl md:text-5xl font-black text-white mb-4">${p.name}</h1>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-1 text-yellow-500">
+                                <i class="ph-fill ph-star"></i><span class="text-white font-bold">${p.rating}</span>
+                            </div>
+                            <span class="text-neutral-500">(${p.reviews} customer reviews)</span>
+                        </div>
+                    </div>
+                    <div class="text-5xl font-black text-white">${formatPrice(p.price)}</div>
+                    <p class="text-neutral-400 text-lg leading-relaxed">${p.description} Premium build quality designed for maximum performance and durability.</p>
+                    <div class="flex items-center gap-4">
+                        <button onclick="addToCart(${p.id})" class="flex-grow bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold text-lg transition-all active:scale-95">Add to Cart</button>
+                        <button onclick="toggleWishlist(${p.id})" class="p-4 bg-neutral-900 border border-neutral-800 rounded-2xl text-neutral-400 hover:text-red-500 transition">
+                            <i class="${inWish ? 'ph-fill ph-heart text-red-500' : 'ph ph-heart'} text-2xl"></i>
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 py-8 border-t border-neutral-800">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center text-blue-500"><i class="ph-fill ph-check-circle text-xl"></i></div>
+                            <div class="text-sm"><p class="text-white font-bold">Free Shipping</p><p class="text-neutral-500">Orders over ₹5,000</p></div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-neutral-900 rounded-full flex items-center justify-center text-blue-500"><i class="ph ph-shield-check text-xl"></i></div>
+                            <div class="text-sm"><p class="text-white font-bold">1 Year Warranty</p><p class="text-neutral-500">Official Brand Guarantee</p></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- CART LOGIC ---
+        function changeCartQty(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if(item) {
+                item.quantity = Math.max(1, item.quantity + delta);
+                saveState();
+                renderCart();
+            }
+        }
+        function removeFromCart(id) {
+            cart = cart.filter(i => i.id !== id);
+            saveState();
+            renderCart();
+        }
+
+        function renderCart() {
+            const container = document.getElementById('cart-content');
+            if (cart.length === 0) {
+                container.innerHTML = `
+                <div class="text-center py-20 bg-neutral-900 rounded-3xl border border-neutral-800">
+                    <i class="ph ph-bag text-6xl text-neutral-700 mb-4 block"></i>
+                    <h2 class="text-2xl font-bold text-white mb-2">Cart is Empty</h2>
+                    <p class="text-neutral-500 mb-8">Seems like you haven't added anything to your cart yet.</p>
+                    <button onclick="navigate('shop')" class="bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-500 transition">Start Shopping</button>
+                </div>`;
+                return;
+            }
+
+            const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            
+            const itemsHTML = cart.map(item => `
+                <div class="bg-neutral-900 border border-neutral-800 p-4 rounded-2xl flex gap-4">
+                    <div class="w-24 h-24 rounded-xl overflow-hidden bg-neutral-800 shrink-0">
+                        <img src="${item.image}" onerror="handleImageError(this, '${item.name}')" class="w-full h-full object-cover"/>
+                    </div>
+                    <div class="flex-grow flex flex-col justify-between">
+                        <div class="flex justify-between items-start">
+                            <div><h3 class="text-white font-bold">${item.name}</h3><p class="text-neutral-500 text-xs">${item.category}</p></div>
+                            <button onclick="removeFromCart(${item.id})" class="text-neutral-600 hover:text-red-500"><i class="ph ph-trash text-lg"></i></button>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center bg-black rounded-lg p-1 border border-neutral-800">
+                                <button onclick="changeCartQty(${item.id}, -1)" class="p-1 text-neutral-400 hover:text-white"><i class="ph ph-minus"></i></button>
+                                <span class="px-4 text-white font-bold text-sm">${item.quantity}</span>
+                                <button onclick="changeCartQty(${item.id}, 1)" class="p-1 text-neutral-400 hover:text-white"><i class="ph ph-plus"></i></button>
+                            </div>
+                            <span class="text-white font-black">${formatPrice(item.price * item.quantity)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                    <div class="lg:col-span-2 space-y-4">${itemsHTML}</div>
+                    <div class="space-y-6">
+                        <div class="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl sticky top-24">
+                            <h3 class="text-xl font-bold text-white mb-6">Order Summary</h3>
+                            <div class="space-y-4 text-neutral-400 mb-6 pb-6 border-b border-neutral-800">
+                                <div class="flex justify-between"><span>Subtotal</span><span class="text-white font-bold">${formatPrice(total)}</span></div>
+                                <div class="flex justify-between"><span>Shipping</span><span class="text-green-500 font-bold">FREE</span></div>
+                                <div class="flex justify-between"><span>Tax (10%)</span><span class="text-white font-bold">${formatPrice(Math.round(total * 0.1))}</span></div>
+                            </div>
+                            <div class="flex justify-between text-2xl font-black text-white mb-8">
+                                <span>Total</span><span>${formatPrice(Math.round(total * 1.1))}</span>
+                            </div>
+                            <button onclick="user ? navigate('checkout') : navigate('login')" class="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold transition shadow-xl shadow-blue-500/10">Checkout Now</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderWishlist() {
+            const container = document.getElementById('wishlist-content');
+            if(wishlist.length === 0){
+                container.innerHTML = `<div class="col-span-full text-center py-20 bg-neutral-900 rounded-3xl border border-neutral-800">
+                    <i class="ph ph-heart text-6xl text-neutral-700 mb-4 block"></i>
+                    <h2 class="text-2xl font-bold text-white mb-2">No Favorites Yet</h2>
+                    <p class="text-neutral-500 mb-8">Items you love will appear here.</p>
+                </div>`;
+            } else {
+                container.innerHTML = wishlist.map(p => getProductCardHTML(p)).join('');
+            }
+        }
+
+        // --- CHECKOUT LOGIC ---
+        function renderCheckout() {
+            if(cart.length === 0) { navigate('shop'); return; }
+            const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            
+            document.getElementById('checkout-items').innerHTML = cart.map(item => `
+                <div class="flex justify-between">
+                    <span class="text-neutral-400">${item.name} x${item.quantity}</span>
+                    <span class="text-white font-bold">${formatPrice(item.price * item.quantity)}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById('checkout-total').innerText = formatPrice(Math.round(total * 1.1));
+            setPayment(currentPaymentMethod); // init payment fields
+        }
+
+        function setPayment(method) {
+            currentPaymentMethod = method;
+            const fields = document.getElementById('payment-fields');
+            const codMsg = document.getElementById('cod-msg');
+            
+            // reset styles
+            document.querySelectorAll('.pay-btn').forEach(b => {
+                b.className = 'pay-btn border border-neutral-800 p-4 rounded-2xl flex flex-col items-center gap-2 transition hover:border-neutral-700';
+            });
+            document.getElementById('pay-card-icon').className = 'ph ph-credit-card text-neutral-500 text-xl';
+            document.getElementById('pay-net-icon').className = 'text-neutral-500 font-black text-xl';
+            document.getElementById('pay-cod-icon').className = 'text-neutral-500 font-black text-xl';
+
+            const activeBtn = document.getElementById(`pay-${method}`);
+            activeBtn.className = 'pay-btn border border-blue-600 bg-blue-600/10 p-4 rounded-2xl flex flex-col items-center gap-2 transition';
+            
+            codMsg.classList.add('hidden');
+            
+            if(method === 'upi') {
+                fields.innerHTML = `<input type="text" placeholder="Enter UPI ID (e.g., name@okhdfcbank)" class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white mt-6">`;
+            } else if (method === 'card') {
+                document.getElementById('pay-card-icon').className = 'ph ph-credit-card text-blue-500 text-xl';
+                fields.innerHTML = `
+                    <div class="mt-6 space-y-3">
+                        <input type="text" placeholder="Card Number" class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white">
+                        <div class="grid grid-cols-2 gap-3">
+                            <input type="text" placeholder="MM/YY" class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white">
+                            <input type="text" placeholder="CVV" class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white">
+                        </div>
+                    </div>`;
+            } else if (method === 'netbanking') {
+                document.getElementById('pay-net-icon').className = 'text-blue-500 font-black text-xl';
+                fields.innerHTML = `
+                    <select class="w-full bg-black border border-neutral-800 rounded-xl px-4 py-3 text-white mt-6 appearance-none">
+                        <option>Select your Bank</option><option>HDFC Bank</option><option>SBI</option><option>ICICI Bank</option>
+                    </select>`;
+            } else if (method === 'cod') {
+                document.getElementById('pay-cod-icon').className = 'text-blue-500 font-black text-xl';
+                fields.innerHTML = '';
+                codMsg.classList.remove('hidden');
+            }
+        }
+
+        function placeOrder() {
+            const total = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+            const newOrder = {
+                id: Math.floor(100000 + Math.random() * 900000), // Random 6 digit ID
+                total: Math.round(total * 1.1),
+                date: new Date().toLocaleDateString(),
+                items: cart.length
+            };
+            orders.unshift(newOrder);
+            cart = [];
+            saveState();
+            navigate('orders');
+            notify(`Order #${newOrder.id} placed successfully!`);
+        }
+
+        // --- ORDER TRACKING ---
+        function renderOrders() {
+            const container = document.getElementById('orders-content');
+            if (orders.length === 0) {
+                container.innerHTML = `<p class="text-neutral-500 text-center py-20 bg-neutral-900 rounded-3xl border border-neutral-800">You haven't placed any orders yet.</p>`;
+                return;
+            }
+            container.innerHTML = orders.map(o => `
+                <div class="bg-neutral-900 border border-neutral-800 p-6 rounded-2xl flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+                    <div>
+                        <p class="text-white font-bold text-lg">Order #${o.id}</p>
+                        <p class="text-neutral-500 text-sm">${o.date} • ${o.items} items</p>
+                    </div>
+                    <div class="text-left sm:text-right flex flex-col sm:items-end w-full sm:w-auto">
+                        <p class="text-white font-black text-xl mb-2 sm:mb-0">${formatPrice(o.total)}</p>
+                        <button onclick="document.getElementById('track-input').value='${o.id}'; navigate('track'); document.querySelector('#page-track form button').click();" class="bg-blue-600/20 text-blue-500 text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-lg hover:bg-blue-600 hover:text-white transition w-fit">
+                            Track Status
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleTrack(e) {
+            e.preventDefault();
+            const id = document.getElementById('track-input').value.trim();
+            const order = orders.find(o => o.id.toString() === id);
+            const resultDiv = document.getElementById('track-result');
+            
+            if(!order) {
+                resultDiv.innerHTML = `<div class="text-center text-red-400 bg-red-500/10 border border-red-500/20 p-6 rounded-2xl max-w-lg mx-auto">No order found with ID "${id}". Please check your dashboard.</div>`;
+                return;
+            }
+
+            resultDiv.innerHTML = `
+                <div class="bg-neutral-900 border border-neutral-800 p-8 rounded-3xl">
+                    <div class="flex justify-between items-center mb-8 border-b border-neutral-800 pb-6">
+                        <div><p class="text-white font-bold text-lg">Order #${order.id}</p><p class="text-neutral-500 text-sm">Placed on ${order.date}</p></div>
+                        <p class="text-white font-black text-xl">${formatPrice(order.total)}</p>
+                    </div>
+                    <div class="relative flex justify-between items-center mb-4 mt-12 px-6">
+                        <div class="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-neutral-800 rounded-full z-0"></div>
+                        <div class="absolute left-6 right-1/4 top-1/2 -translate-y-1/2 h-1 bg-blue-600 rounded-full z-0"></div>
+                        
+                        ${['Placed', 'Processing', 'Shipped', 'Delivered'].map((step, idx) => `
+                            <div class="relative z-10 flex flex-col items-center gap-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${idx <= 2 ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'bg-neutral-900 border-2 border-neutral-700 text-neutral-500'}">
+                                    <i class="ph-fill ph-check-circle text-lg"></i>
+                                </div>
+                                <span class="text-xs sm:text-sm font-bold ${idx <= 2 ? 'text-blue-500' : 'text-neutral-600'}">${step}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <p class="text-center text-sm text-neutral-400 mt-12">Your order is currently in transit. Expected delivery in 2-3 days.</p>
+                </div>
+            `;
+        }
+
+        // --- AUTH & ADMIN ---
+        function toggleSignup() {
+            isSignupMode = !isSignupMode;
+            document.getElementById('login-title').innerText = isSignupMode ? "Join the Hub" : "Welcome Back";
+            document.getElementById('login-sub').innerText = isSignupMode ? "Create an account to start shopping" : "Enter your credentials to access your account";
+            document.getElementById('signup-fields').classList.toggle('hidden', !isSignupMode);
+            document.getElementById('forgot-pw').classList.toggle('hidden', isSignupMode);
+            document.getElementById('login-submit-btn').innerText = isSignupMode ? "Create Account" : "Sign In";
+            document.getElementById('login-toggle-text').innerText = isSignupMode ? "Already have an account?" : "Don't have an account?";
+            document.getElementById('login-toggle-btn').innerText = isSignupMode ? "Login here" : "Sign up for free";
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            user = { name: 'Demo User', email: 'user@test.com', isAdmin: false };
+            saveState();
+            notify("Logged in successfully!");
+            navigate('home');
+        }
+
+        function loginAsAdmin() {
+            user = { name: 'Demo Admin', email: 'admin@electrohub.in', isAdmin: true };
+            saveState();
+            notify("Logged in as Demo Admin!");
+            navigate('admin');
+        }
+
+        function continueAsGuest() {
+            user = null;
+            saveState();
+            notify("Browsing as Guest");
+            navigate('home');
+        }
+
+        function logout() {
+            user = null;
+            saveState();
+            notify("Signed out successfully.");
+            navigate('login');
+        }
+
+        function setAdminTab(tab) {
+            document.getElementById('admin-products-view').classList.toggle('hidden', tab !== 'products');
+            document.getElementById('admin-orders-view').classList.toggle('hidden', tab !== 'orders');
+            document.getElementById('tab-products').className = `w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${tab === 'products' ? 'bg-blue-600 text-white' : 'text-neutral-500 hover:bg-neutral-900'}`;
+            document.getElementById('tab-orders').className = `w-full flex items-center gap-3 px-4 py-3 rounded-xl transition font-bold ${tab === 'orders' ? 'bg-blue-600 text-white' : 'text-neutral-500 hover:bg-neutral-900'}`;
+        }
+
+        function renderAdmin() {
+            document.getElementById('admin-table-body').innerHTML = PRODUCTS.map(p => `
+                <tr class="group">
+                    <td class="py-4">
+                        <div class="flex items-center gap-3">
+                            <img src="${p.image}" onerror="handleImageError(this, '${p.name}')" class="w-10 h-10 rounded-lg object-cover" />
+                            <span class="text-white font-medium">${p.name}</span>
+                        </div>
+                    </td>
+                    <td class="py-4 text-neutral-400">${p.category}</td>
+                    <td class="py-4 text-white font-bold">${formatPrice(p.price)}</td>
+                    <td class="py-4"><button class="text-neutral-500 hover:text-red-500"><i class="ph ph-trash text-lg"></i></button></td>
+                </tr>
+            `).join('');
+        }
+
+        // --- POLICY PAGES ---
+        const policies = {
+            "Help Center": "Welcome to the Electro Hub Help Center. How can we assist you today? Search for common questions regarding account management, product setup, and troubleshooting.",
+            "Shipping Policy": "We offer free standard shipping on all orders above ₹5,000 across India. Standard delivery usually takes 3-5 business days depending on your pin code. Expedited 1-day delivery is available at checkout for selected metropolitan areas.",
+            "Returns & Refunds": "Your satisfaction is our priority. Electro Hub offers a hassle-free 15-day return policy for unopened items in their original packaging. Once we receive and inspect the item, a full refund will be initiated to your original payment method within 3-5 business days.",
+            "Contact Us": "Reach out to our customer support team 24/7.<br/><br/><b>Email:</b> support@electrohub.in<br/><b>Phone:</b> +91 1800-123-4567<br/><b>Address:</b> 42 Tech Park Avenue, Silicon Valley, Bengaluru, KA 560001",
+            "Privacy Policy": "We value your privacy. Electro Hub strictly encrypts and secures your personal and payment information. We do not sell your data to third parties. For more detailed information on tracking and cookies, refer to our full documentation.",
+            "Terms of Service": "By accessing Electro Hub, you agree to comply with our general Terms of Service. All product prices and availability are subject to change without notice."
+        };
+
+        function openPolicy(title) {
+            document.getElementById('policy-title').innerText = title;
+            document.getElementById('policy-content').innerHTML = policies[title] || "Information currently unavailable.";
+            navigate('policy');
+            window.scrollTo(0,0);
+        }
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+            updateBadges();
+            // Start at Login page initially
+            navigate('login');
+        };
+
+    </script>
+</body>
+</html>
